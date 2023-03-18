@@ -1,4 +1,4 @@
-# Voice Conversion with Limited Speech Data based on Feature Disentanglement Using Variational Auto-Encoder(FDVAE-VC)
+# Parallel Voice Conversion based on Feature Disentanglement Using Variational Auto-Encoder(FDVAE-VC)
 This repository provides a Pytorch implementation of FDVAE-VC, which can separate the speech into content, timbre, rhythm, pitch, and accent.
 
 # Dependencies
