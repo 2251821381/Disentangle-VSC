@@ -10,7 +10,7 @@ This repository provides a Pytorch implementation of FDVAE-VC, which can separat
 - pysptk
 - soundfile
 - matplotlib
-- wavenet_vocoder `pip install wavenet_vocoder==0.1.11
+- wavenet_vocoder `pip install wavenet_vocoder==0.1.11`
 
 # Prepared
 Extract the mel-spectrogram and F0 from the wav files.
