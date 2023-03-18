@@ -36,3 +36,5 @@ First generate a test pkl file, which contains the information of the source spe
 Then run the demo.py file for conversion.
 
     python demo.py
+
+And the wavenet_vocoder can be downloaded [here](https://drive.google.com/file/d/1Zksy0ndlDezo9wclQNZYkGi_6i7zi4nQ/view)
