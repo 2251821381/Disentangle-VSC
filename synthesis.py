@@ -12,6 +12,7 @@ from hparams import hparams
 from wavenet_vocoder import builder
 
 torch.set_num_threads(4)
+use_cuda = torch.cuda.is_available()
 
 
 def build_model():

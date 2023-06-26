@@ -1,5 +1,6 @@
 import os
 import argparse
+import torch
 from torch.backends import cudnn
 
 from solver import Solver
@@ -36,20 +37,22 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Training configuration.
-    parser.add_argument('--num_iters', type=int, default=100000, help='number of total iterations')
+    parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations')
     parser.add_argument('--g_lr', type=float, default=0.0001, help='learning rate for G')
     parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
     parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for Adam optimizer')
-    parser.add_argument('--resume_iters', type=int, default=None, help='resume training from this step')
+    parser.add_argument('--resume_iters', type=int, default=0, help='resume training from this step')
+    # parser.add_argument('--resume_iters', type=int, default=459000, help='resume training from this step')
 
     # Miscellaneous.
     parser.add_argument('--use_tensorboard', type=str2bool, default=True)
-    parser.add_argument('--device_id', type=int, default=0)
+    parser.add_argument('--device_id', type=int, default=2)
 
     # Directories.
-    parser.add_argument('--log_dir', type=str, default='run/VCTK47/logs')
-    parser.add_argument('--model_save_dir', type=str, default='run/VCTK47/models')
-    parser.add_argument('--sample_dir', type=str, default='run/VCTK47/samples')
+    parser.add_argument('--log_dir', type=str, default='run/VCTK122/logs')
+    parser.add_argument('--model_save_dir', type=str, default='run/VCTK122/models')
+    parser.add_argument('--sample_dir', type=str, default='run/VCTK122/samples')
+    parser.add_argument('--test_iters', type=str, default='122')
 
     # Step size.
     parser.add_argument('--log_step', type=int, default=10)

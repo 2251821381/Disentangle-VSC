@@ -1,0 +1,11 @@
+uttr_id	ref	syn
+001	../dataset/VCTK/dataset/wav16/p226\p226_001_mic1.wav	../results/VCTK121/p225_p226/001_p225_p226_AFRU.wav
+002	../dataset/VCTK/dataset/wav16/p226\p226_002_mic1.wav	../results/VCTK121/p225_p226/002_p225_p226_AFRU.wav
+003	../dataset/VCTK/dataset/wav16/p226\p226_003_mic1.wav	../results/VCTK121/p225_p226/003_p225_p226_AFRU.wav
+004	../dataset/VCTK/dataset/wav16/p226\p226_004_mic1.wav	../results/VCTK121/p225_p226/004_p225_p226_AFRU.wav
+005	../dataset/VCTK/dataset/wav16/p226\p226_005_mic1.wav	../results/VCTK121/p225_p226/005_p225_p226_AFRU.wav
+006	../dataset/VCTK/dataset/wav16/p226\p226_006_mic1.wav	../results/VCTK121/p225_p226/006_p225_p226_AFRU.wav
+007	../dataset/VCTK/dataset/wav16/p226\p226_007_mic1.wav	../results/VCTK121/p225_p226/007_p225_p226_AFRU.wav
+008	../dataset/VCTK/dataset/wav16/p226\p226_008_mic1.wav	../results/VCTK121/p225_p226/008_p225_p226_AFRU.wav
+009	../dataset/VCTK/dataset/wav16/p226\p226_009_mic1.wav	../results/VCTK121/p225_p226/009_p225_p226_AFRU.wav
+010	../dataset/VCTK/dataset/wav16/p226\p226_010_mic1.wav	../results/VCTK121/p225_p226/010_p225_p226_AFRU.wav

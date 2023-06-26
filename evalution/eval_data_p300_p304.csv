@@ -1,0 +1,10 @@
+id	ref	syn
+2	../dataset/VCTK/test/wav16/p304/p304_002_mic1.wav	../results/VCTK121/002_p300_American_002_p304_NorthernIrish_test_x_121/002_p300_p304_AFRU.wav
+3	../dataset/VCTK/test/wav16/p304/p304_003_mic1.wav	../results/VCTK121/003_p300_American_003_p304_NorthernIrish_test_x_121/003_p300_p304_AFRU.wav
+4	../dataset/VCTK/test/wav16/p304/p304_004_mic1.wav	../results/VCTK121/004_p300_American_004_p304_NorthernIrish_test_x_121/004_p300_p304_AFRU.wav
+5	../dataset/VCTK/test/wav16/p304/p304_005_mic1.wav	../results/VCTK121/005_p300_American_005_p304_NorthernIrish_test_x_121/005_p300_p304_AFRU.wav
+6	../dataset/VCTK/test/wav16/p304/p304_006_mic1.wav	../results/VCTK121/006_p300_American_006_p304_NorthernIrish_test_x_121/006_p300_p304_AFRU.wav
+7	../dataset/VCTK/test/wav16/p304/p304_007_mic1.wav	../results/VCTK121/007_p300_American_007_p304_NorthernIrish_test_x_121/007_p300_p304_AFRU.wav
+8	../dataset/VCTK/test/wav16/p304/p304_008_mic1.wav	../results/VCTK121/008_p300_American_008_p304_NorthernIrish_test_x_121/008_p300_p304_AFRU.wav
+9	../dataset/VCTK/test/wav16/p304/p304_009_mic1.wav	../results/VCTK121/009_p300_American_009_p304_NorthernIrish_test_x_121/009_p300_p304_AFRU.wav
+10	../dataset/VCTK/test/wav16/p304/p304_010_mic1.wav	../results/VCTK121/010_p300_American_010_p304_NorthernIrish_test_x_121/010_p300_p304_AFRU.wav

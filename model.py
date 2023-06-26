@@ -1,8 +1,12 @@
+import math
 import random
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+
+from math import ceil
 
 
 class LinearNorm(torch.nn.Module):
@@ -59,9 +63,14 @@ class ConvNorm(torch.nn.Module):
 def randomSampling(x, S, training):
     if not training:
         return x
+    device = x.device
+    # print(a.shape)  # torch.Size([8, 128, 256])
     B, N, C = x.shape
+    # S = 64
     index = torch.LongTensor(random.sample(range(N), S)).cuda()
+    # print(index)
     b = torch.index_select(x, 1, index)
+    # print(b.shape)  # torch.Size([32, 64, 64])
     return b
 
 
@@ -74,7 +83,8 @@ def reparameterize(mean, logvar):
     """
     # Reparametrization occurs only if random sampling is set to true, otherwise mean is returned
     std = torch.exp(0.5 * logvar)
-    eps = torch.randn_like(logvar)
+    # eps = torch.randn_like(logvar)
+    eps = torch.exp(logvar / 2)
     z = mean + eps * std
     return z
 
@@ -86,6 +96,7 @@ class AccentEncoder(nn.Module):
     def __init__(self, hparams):
         super().__init__()
 
+        self.dim_f0 = hparams.dim_f0
         self.dim_freq = hparams.dim_freq  # 输入数据维数
         self.dim_enc = hparams.dim_enc_4
         self.hidden_dim = hparams.dim_neck_4
@@ -95,20 +106,24 @@ class AccentEncoder(nn.Module):
         self.dropout = hparams.c_dropout
 
         convolutions = []
-        for i in range(1):
+        for i in range(3):
             conv_layer = nn.Sequential(
-                ConvNorm(self.dim_freq if i == 0 else self.dim_enc,
+                ConvNorm(self.dim_f0 if i == 0 else self.dim_enc,
                          self.dim_enc,
                          kernel_size=5, stride=1,
                          padding=2,
                          dilation=1, w_init_gain='relu'),
-                nn.GroupNorm(self.dim_enc // self.chs_grp, self.dim_enc),
+                nn.BatchNorm1d(self.dim_enc),
                 nn.ReLU()
+                # nn.GroupNorm(self.dim_enc // self.chs_grp, self.dim_enc)
             )
             convolutions.append(conv_layer)
         self.convolutions = nn.ModuleList(convolutions)
 
+        # self.dropout = nn.Dropout(self.dropout)
+
         self.a_lstm = nn.LSTM(self.dim_enc, self.hidden_dim, 1, batch_first=True, bidirectional=True)
+        # self.interp = InterpLnr(hparams)
 
     def forward(self, mel):
         """
@@ -120,6 +135,11 @@ class AccentEncoder(nn.Module):
         mel = mel.transpose(1, 2)
         for conv in self.convolutions:
             mel = conv(mel)
+            # mel = mel.transpose(1, 2)
+            # # mel = randomSampling(mel, seq, self.training)
+            # mel = self.interp(mel, len_org.expand(batch_size))
+            # mel = mel.transpose(1, 2)
+            # mel = self.dropout(mel)
         mel = mel.transpose(1, 2)
 
         self.a_lstm.flatten_parameters()
@@ -157,18 +177,19 @@ class RhythmEncoder(nn.Module):
                          kernel_size=5, stride=1,
                          padding=2,
                          dilation=1, w_init_gain='relu'),
-                nn.GroupNorm(self.dim_enc // self.chs_grp, self.dim_enc)
+                nn.BatchNorm1d(self.dim_enc)
             )
             convolutions.append(conv_layer)
         self.convolutions = nn.ModuleList(convolutions)
 
-        self.r_lstm = nn.LSTM(self.dim_enc, self.hidden_dim, 1, batch_first=True, bidirectional=True)
+        self.r_lstm = nn.LSTM(self.dim_enc, self.hidden_dim, batch_first=True, bidirectional=True)
 
     def forward(self, mel):
         """
         :param mel: Speech S, mel-spectrogram # (8, 80, 128)
         :return:
         """
+        batch_size, seq, feature = mel.shape
         mel = mel.transpose(1, 2)
         for conv in self.convolutions:
             mel = F.relu(conv(mel))
@@ -184,8 +205,42 @@ class RhythmEncoder(nn.Module):
         # ensure the frames at both ends are covered by at least one forward code and one backward code
         lstm_out = torch.cat((out_forward[:, self.freq_2 - 1::self.freq_2, :],
                               out_backward[:, ::self.freq_2, :]), dim=-1)
-
         return lstm_out
+
+
+class Attention(nn.Module):
+    def __init__(self, num_heads, dim):
+        super(Attention, self).__init__()
+        self.num_heads = num_heads
+        self.hidden_dim = dim
+        self.input_dim = dim
+        self.query = nn.Linear(self.input_dim, self.hidden_dim, bias=False)
+        self.key = nn.Linear(self.input_dim, self.hidden_dim, bias=False)
+        self.value = nn.Linear(self.input_dim, self.hidden_dim, bias=False)
+        self.out = nn.Linear(self.hidden_dim, self.input_dim)
+
+    def forward(self, x):
+        # x shape: (batch_size, seq_len, input_dim)
+        batch_size, seq_len, _ = x.size()
+        q = self.query(x)
+        k = self.key(x)
+        v = self.value(x)
+        # (batch_size, num_heads, seq_len, hidden_dim/num_heads)
+        q = q.view(batch_size, seq_len, self.num_heads, -1).transpose(1, 2)
+        # (batch_size, num_heads, seq_len, hidden_dim/num_heads)
+        k = k.view(batch_size, seq_len, self.num_heads, -1).transpose(1, 2)
+        # (batch_size, num_heads, seq_len, hidden_dim/num_heads)
+        v = v.view(batch_size, seq_len, self.num_heads, -1).transpose(1, 2)
+        attn_weights = torch.matmul(q, k.transpose(-2, -1)) / (self.hidden_dim / self.num_heads) ** 0.5
+        attn_weights = torch.softmax(attn_weights, dim=-1)
+        attn_output = torch.matmul(attn_weights, v)
+        attn_output = attn_output.transpose(1, 2).contiguous().view(batch_size, seq_len, -1)
+        # attn_output shape: (batch_size, seq_len, hidden_dim)
+        output = self.out(attn_output)
+        # output shape: (batch_size, seq_len, hidden_dim)
+        # output = output.mean(dim=1) # average pooling along the time dimension
+        # # output shape: (batch_size, hidden_dim)
+        return output
 
 
 class F0Encoder(nn.Module):
@@ -210,7 +265,7 @@ class F0Encoder(nn.Module):
                          kernel_size=5, stride=1,
                          padding=2,
                          dilation=1, w_init_gain='relu'),
-                nn.GroupNorm(self.dim_enc // self.chs_grp, self.dim_enc),
+                nn.BatchNorm1d(self.dim_enc),
                 nn.ReLU()
             )
             convolutions.append(conv_layer)
@@ -267,15 +322,14 @@ class ContentEncoder(nn.Module):
                          kernel_size=5, stride=1,
                          padding=2,
                          dilation=1, w_init_gain='relu'),
-                nn.GroupNorm(self.dim_enc // self.chs_grp, self.dim_enc)
+                nn.BatchNorm1d(self.dim_enc)
             )
             convolutions.append(conv_layer)
         self.convolutions = nn.ModuleList(convolutions)
         self.c_lstm = nn.LSTM(self.dim_enc, self.hidden_dim, 2, batch_first=True, bidirectional=True)
-        self.c_rnn = nn.RNN(self.hidden_dim * 2, self.hidden_dim, batch_first=True)
-        self.c_mean = LinearNorm(self.hidden_dim, self.dim_c)
-        self.c_logvar = LinearNorm(self.hidden_dim, self.dim_c)
-        self.dropout_layer = nn.Dropout(p=self.dropout)
+
+        self.mean_layer = LinearNorm(self.hidden_dim * 2, self.dim_c)
+        self.std_layer = LinearNorm(self.hidden_dim * 2, self.dim_c)
 
         self.interp = InterpLnr(hparams)
 
@@ -290,7 +344,6 @@ class ContentEncoder(nn.Module):
         mel = mel.transpose(1, 2)  # (bz, 128, 80) ---> (bz, 80, 128)
         for conv in self.convolutions:
             mel = F.relu(conv(mel))
-            mel = self.dropout_layer(mel)
             mel = mel.transpose(1, 2)
             mel = self.interp(mel, len_org.expand(batch_size))
             mel = mel.transpose(1, 2)
@@ -298,16 +351,17 @@ class ContentEncoder(nn.Module):
 
         self.c_lstm.flatten_parameters()
         lstm_out, _ = self.c_lstm(mel)
-
         # downsampling operation ,to reduce the temporal dimension, producing the hidden representations,潜在层表示
         out_forward = lstm_out[:, :, :self.hidden_dim]
         out_backward = lstm_out[:, :, self.hidden_dim:]
+        # lstm_out = torch.cat((out_forward, out_backward), dim=-1)
         lstm_out = torch.cat((out_forward[:, self.freq - 1::self.freq, :],
                               out_backward[:, ::self.freq, :]), dim=-1)
-        feature, _ = self.c_rnn(lstm_out)
-        mean = self.c_mean(feature)
-        logvar = self.c_logvar(feature)
-        return mean, logvar, reparameterize(mean, logvar)
+        lstm_out = lstm_out.repeat_interleave(self.freq, dim=1)
+        mu = self.mean_layer(lstm_out)
+        logvar = self.std_layer(lstm_out)
+
+        return mu, logvar, reparameterize(mu, logvar)
 
 
 class Decoder(nn.Module):
@@ -328,6 +382,7 @@ class Decoder(nn.Module):
         self.dim_pre = hparams.dim_pre
         self.conv_dim = hparams.conv_dim
 
+        # self.latent_dim = self.c_dim + self.r_dim + self.f_dim + self.dim_spk_emb + self.dim_accent_emb
         self.latent_dim = self.c_dim + self.r_dim + self.f_dim + self.a_dim + self.dim_spk_emb
 
         # three bidirectional-LSTM layers
@@ -347,6 +402,7 @@ class Decoder(nn.Module):
         self.convolutions = nn.ModuleList(convolutions)
 
         self.lstm2 = nn.LSTM(self.dim_pre, self.conv_dim, 2, batch_first=True)
+        self.attention = Attention(hparams.num_heads, self.conv_dim)
         self.linear_projection = LinearNorm(self.conv_dim, self.dim_freq)
 
     def forward(self, x):
@@ -359,6 +415,8 @@ class Decoder(nn.Module):
         x = x.transpose(1, 2)
 
         outputs, _ = self.lstm2(x)
+
+        outputs = self.attention(outputs)
 
         decoder_output = self.linear_projection(outputs)
 
@@ -418,6 +476,10 @@ class Generator(nn.Module):
     def __init__(self, hparams):
         super().__init__()
 
+        # self.dim_freq = hparams.dim_freq
+        # self.conv_dim = hparams.conv_dim
+        # self.dim_pre = hparams.dim_pre
+
         self.encoder_c = ContentEncoder(hparams)
         self.encoder_r = RhythmEncoder(hparams)
         self.encoder_f = F0Encoder(hparams)
@@ -430,27 +492,27 @@ class Generator(nn.Module):
         self.freq_3 = hparams.freq_3
         self.freq_4 = hparams.freq_4
 
-    def forward(self, mel_org, mel_trg, f0, spk_org, spk_trg, accent_mel):
-        batch_size, sequence_length, feature_size = mel_org.shape
+    def forward(self, c_mel, r_mel, f0, accent_f0, spk_emb):
+        batch_size, sequence_length, feature_size = c_mel.shape
         # [batch size, sequence len, feature size]
-        mean, logvar, content = self.encoder_c(mel_org)
-        if spk_trg is None:
-            return content.repeat_interleave(self.freq, dim=1)
-        rhythm = self.encoder_r(mel_trg)
+        # mean, logvar, content = self.encoder_c(mel_org)
+        mu, logvar, content = self.encoder_c(c_mel)
+        rhythm = self.encoder_r(r_mel)
         pitch = self.encoder_f(f0)
-        accent = self.encoder_a(accent_mel)
-        content = content.repeat_interleave(self.freq, dim=1)
+        accent = self.encoder_a(accent_f0)
+
+        # content = content.repeat_interleave(self.freq, dim=1)
         rhythm = rhythm.repeat_interleave(self.freq_2, dim=1)
         pitch = pitch.repeat_interleave(self.freq_3, dim=1)
         accent = accent.repeat_interleave(self.freq_4, dim=1)
 
         decoder_input = torch.cat((content, rhythm, pitch, accent,
-                                   spk_trg.unsqueeze(1).expand(-1, sequence_length, -1)),
+                                   spk_emb.unsqueeze(1).expand(-1, sequence_length, -1)),
                                   dim=-1)
         mel_outputs = self.decoder(decoder_input)
         mel_outputs_postnet = self.postnet(mel_outputs.transpose(2, 1))
         mel_outputs_postnet = mel_outputs + mel_outputs_postnet.transpose(2, 1)
-        return mean, logvar, content, mel_outputs, mel_outputs_postnet
+        return mu, logvar, content, mel_outputs, mel_outputs_postnet
 
 
 class InterpLnr(nn.Module):

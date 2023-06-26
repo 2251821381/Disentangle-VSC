@@ -1,9 +1,17 @@
 """Utilities for prepared manipulation."""
 
+from typing import Union
+from pathlib import Path
+
 import librosa
 import numpy as np
+import matplotlib
+from matplotlib import pyplot as plt
 from scipy.signal import lfilter, get_window
 from scipy import signal
+# from scipy.signal import
+
+# matplotlib.use("Agg")
 
 
 def log_mel_spectrogram(

@@ -1,0 +1,5 @@
+id	ref	syn
+1	../dataset/VCTK/test/wav16/p314/p314_001_mic1.wav	../results/VCTK121/001_p304_NorthernIrish_001_p314_SouthAfrican_test_x_121/001_p304_p314_AFRU.wav
+2	../dataset/VCTK/dataset/wav16/p251/p251_001_mic1.wav	../results/VCTK121/001_p226_English_p251_Indian_test_x_121/001_p226_p251_AFRU.wav
+3	../dataset/VCTK/dataset/wav16/p232/p232_001_mic1.wav	../results/VCTK121/001_p231_English_p232_English_test_x_121/001_p231_p232_AFRU.wav
+4	../dataset/VCTK/test/wav16/p315/p315_001_mic1.wav	../results/VCTK121/001_p302_Canadian_001_p315_American_test_x_121/001_p302_p315_AFRU.wav

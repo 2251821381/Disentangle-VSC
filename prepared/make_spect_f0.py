@@ -10,6 +10,7 @@ from numpy.random import RandomState
 from pysptk import sptk
 from prepared.prepared_utils import butter_highpass, speaker_normalization, pySTFT
 
+import matplotlib.pyplot as plt
 fft_length = 1024
 hop_length = 256
 # 创建一个 Filterbank 矩阵以将FFT bins合并到mel-frequency bins
@@ -30,11 +31,14 @@ spk2gen = pickle.load(open('../dataset/VCTK/spk2gen_nikl.pkl', "rb"))
 
 # Modify as needed
 # audio file directory
-rootDir = '../dataset/VCTK/dataset/wav16'
+# rootDir = '../dataset/VCTK/test/p225_p252/dataset'
+rootDir = '../dataset/VCTK/test/wav16'
 # f0 directory
-targetDir_f0 = '../dataset/VCTK/dataset/raptf0'
+# targetDir_f0 = '../dataset/VCTK/test/p225_p252/raptf0'
+targetDir_f0 = '../dataset/VCTK/test/raptf0'
 # spectrogram directory
-targetDir = '../dataset/VCTK/dataset/spmel'
+# targetDir = '../dataset/VCTK/test/p225_p252/spmel'
+targetDir = '../dataset/VCTK/test/spmel'
 
 
 dirName, subdirList, _ = next(os.walk(rootDir))
@@ -49,14 +53,15 @@ for subdir in sorted(subdirList):
         os.makedirs(os.path.join(targetDir_f0, subdir))
     _, _, fileList = next(os.walk(os.path.join(dirName, subdir)))
 
-    gender, index = spk2gen[subdir]
-    print(f'gender: %s, index: %s' % (gender, index))
-    if gender == 'M':
-        lo, hi = 50, 250
-    elif gender == 'F':
-        lo, hi = 100, 600
-    else:
-        lo, hi = 100, 600
+    # gender = spk2gen[subdir]
+    # print(f'gender: %s, index: %s' % gender)
+    # if gender == 'M':
+    #     lo, hi = 50, 250
+    # elif gender == 'F':
+    #     lo, hi = 100, 600
+    # else:
+    #     lo, hi = 100, 600
+    lo, hi = 100, 600
         # raise ValueError
 
     # 同一个音频文件子目录下，设定生成的随机数序列相同
@@ -67,7 +72,7 @@ for subdir in sorted(subdirList):
         x, fs = sf.read(os.path.join(dirName, subdir, fileName))
         x = x.T
         # 重采样，指定原采样频率和目标采样频率
-        x = librosa.resample(x, fs, 16000)
+        x = librosa.resample(x, fs, orig_sr=16000, target_sr=16000)
         assert fs == 16000
         if x.shape[0] % hop_length == 0:
             x = np.concatenate((x, np.array([1e-06])), axis=0)
@@ -83,6 +88,11 @@ for subdir in sorted(subdirList):
         # to decibel,转换成分贝
         D_db = 20 * np.log10(np.maximum(min_level, D_mel)) - 16
         S = (D_db + 100) / 100
+        print(S.shape)
+        # plt.figure(dpi=600)  # 将显示的所有图分辨率调高
+        # fig, axs = plt.subplots(1, 1)
+        # im = axs.imshow(S.T, origin='lower', aspect='auto')
+        # plt.show(block=False)
 
         # extract f0
         f0_rapt = sptk.rapt(wav.astype(np.float32) * 32768, fs, hop_length, min=lo, max=hi, otype=2)
@@ -91,6 +101,7 @@ for subdir in sorted(subdirList):
         f0_norm = speaker_normalization(f0_rapt, index_nonzero, mean_f0, std_f0)
 
         assert len(S) == len(f0_rapt)
+        # print(len(S))
         np.save(os.path.join(targetDir, subdir, fileName[:-4]),
                 S.astype(np.float32), allow_pickle=False)
         np.save(os.path.join(targetDir_f0, subdir, fileName[:-4]),

@@ -8,6 +8,8 @@ hparams = HParams(
     dim_pre=512,
     conv_dim=1024,
 
+    lambda_kl=1,
+
     # SpeakerEncoder
     n_conv_blocks=6,
     dim_speaker=512,
@@ -17,15 +19,15 @@ hparams = HParams(
     # ContentEncoder
     dim_enc=512,    # Conv Dim
     dim_neck=8,     # BLSTM Dim
-    freq=4,         # downsample Factor
+    freq=8,         # downsample Factor
     dim_c=16,
     c_dropout=0.1,
 
     # RhythmEncoder
     dim_enc_2=128,  # Conv Dim
-    dim_neck_2=2,  # BLSTM Dim
-    freq_2=4,  # downsample Factor
-    dim_r=4,
+    dim_neck_2=4,  # BLSTM Dim
+    freq_2=8,  # downsample Factor
+    dim_r=8,
 
     # PitchEncoder
     dim_enc_3=256,  # Conv Dim
@@ -33,17 +35,15 @@ hparams = HParams(
     freq_3=8,  # downsample Factor
     dim_f=64,
 
+
     # AccentEncoder
-    dim_enc_4=256,
-    dim_neck_4=1,
-    freq_4=8,
-    dim_a=2,
+    dim_enc_4=128,
+    dim_neck_4=4,
+    freq_4=4,
+    dim_a=8,
 
     dim_freq=80,  # in_channels, content, rhythm
-    # speaker embedding: d-vector
-    dim_spk_emb=256,  # dimension of the speaker embedding
-    # speaker embedding : one-hot
-    # dim_spk_emb=82,  # dimension of the speaker embedding
+    dim_spk_emb=512,  # dimension of the speaker embedding
     dim_accent_emb=16,  # dimension of the speaker accent embedding
     dim_f0=257,  # in_channels, f0
 
@@ -83,11 +83,15 @@ hparams = HParams(
     max_len_pad=192,
 
     # data loader
+    # root_dir='assets/spmel',
+    # feat_dir='assets/raptf0',
     root_dir='dataset/VCTK/dataset/spmel',
     feat_dir='dataset/VCTK/dataset/raptf0',
-    # speaker embedding : one-hot
-    validate_dir='dataset/VCTK/test/001_p225_p226_test.pkl',
-    train_file='dataset/VCTK/dataset/spmel/train.pkl',
+    # validate_dir='dataset/VCTK/test/001_p225_p226_test_d.pkl',
+    validate_dir='dataset/VCTK/test/001_p225_English_p226_English_test_x.pkl',
+    # validate_dir='dataset/VCTK/test/001_p225_p226_test.pkl',
+    # train_file='dataset/VCTK/dataset/spmel/train_d.pkl',
+    train_file='dataset/VCTK/dataset/spmel/train_x.pkl',
 
     batch_size=32,
     mode='train',
@@ -109,7 +113,8 @@ hparams = HParams(
     dim_per_head=2,
     mi_weight=0.01,
 
-    n_heads=2,
+    num_heads=8,
+    hidden_dim=8,
 
 )
 
@@ -118,4 +123,3 @@ def hparams_debug_string():
     values = hparams.values()
     hp = ['  %s: %s' % (name, values[name]) for name in values]
     return 'Hyperparameters:\n' + '\n'.join(hp)
-

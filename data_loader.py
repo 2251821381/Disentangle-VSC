@@ -3,6 +3,8 @@ import torch
 import pickle
 import numpy as np
 
+from functools import partial
+from numpy.random import uniform
 from multiprocessing import Process, Manager
 
 from torch.utils import data
@@ -66,6 +68,23 @@ class Utterances(data.Dataset):
         # 遍历子集数据集submeta，k为编号，sbmt为当前说话人信息（包括说话人id，说话人编码，口音编码，pkl文件路径os.path.join(speaker, fileName)）
         for k, sbmt in enumerate(submeta):
             uttrs = len(sbmt) * [None]
+            # fill in speaker id and embedding
+            # uttrs[0] = sbmt[0]
+            # uttrs[1] = sbmt[1]
+            #
+            # # 遍历该用户下的音频文件
+            # sp_tmp = np.load(os.path.join(self.root_dir, sbmt[2]))
+            # f0_tmp = np.load(os.path.join(self.feat_dir, sbmt[2]))
+            #
+            # if self.mode == 'train':
+            #     sp_tmp = sp_tmp[self.split:, :]
+            #     f0_tmp = f0_tmp[self.split:]
+            # elif self.mode == 'test':
+            #     sp_tmp = sp_tmp[:self.split, :]
+            #     f0_tmp = f0_tmp[:self.split]
+            # else:
+            #     raise ValueError
+            # uttrs[2] = (sp_tmp, f0_tmp)
             for j, tmp in enumerate(sbmt):
                 if j < 3:
                     # fill in speaker id and embedding
@@ -121,6 +140,7 @@ class Utterances(data.Dataset):
         len_org = len(melsp)
 
         return melsp, emb_org, accent_org, f0_org, len_org
+
 
     def __len__(self):
         """Return the number of spkrs."""
