@@ -1,4 +1,4 @@
-# Parallel Voice Conversion based on Feature Disentanglement Using Variational Auto-Encoder(FDVAE-VC)
+# Improving Voice Style Conversion via Self-Attention VAE with Feature Disentanglement(Disentangle-VSC)
 This repository provides a Pytorch implementation of FDVAE-VC, which can separate the speech into content, timbre, rhythm, pitch, and accent.
 
 # Dependencies
@@ -29,9 +29,9 @@ Run the main training script
 # Converted
 First generate a test pkl file, which contains the information of the source speaker and the target speaker.
 
-    [source_speaker_Name, one-hot(source speaker embedding), accent_org, [source_mel-spec, source_normd-F0, source_length, source_utterance_name]]
+    [source_speaker_Name, x-vector(source speaker embedding), accent_org, [source_mel-spec, source_normd-F0, source_length, source_utterance_name]]
 
-    [target_speaker_Name, one-hot(target speaker embedding), accent_org, [target_mel-spec, target_normd-F0, target_length, target_utterance_name]]
+    [target_speaker_Name, x-vector(target speaker embedding), accent_org, [target_mel-spec, target_normd-F0, target_length, target_utterance_name]]
 
 Then run the demo.py file for conversion.
 
